@@ -1,11 +1,331 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Santa AR Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Sign AR - Complete Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar-nft.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        #instructions.hidden {
+            display: none;
+        }
+        
+        .button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .button:hover {
+            background: #cc0000;
+        }
+        
+        .demo-sign {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        
+        .demo-sign img {
+            max-width: 250px;
+            border: 3px solid #333;
+            border-radius: 5px;
+        }
+        
+        .status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 999;
+        }
+        
+        .status.success {
+            background: rgba(40, 167, 69, 0.9);
+        }
+        
+        .status.error {
+            background: rgba(220, 53, 69, 0.9);
+        }
+    </style>
 </head>
 <body>
-    <h1>🎅 Santa AR is Working!</h1>
-    <p>If you can see this page, GitHub Pages is working correctly!</p>
-    <p>Ready for the full AR experience!</p>
+    <div id="instructions">
+        <h2>🎅 Santa Sign AR Experience</h2>
+        <p><strong>Welcome!</strong> Point your camera at the sign below to see Santa appear in 3D!</p>
+        
+        <div class="demo-sign">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDA0NDg4O3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDY2Y2M7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0idXJsKCNncmFkaWVudCkiIHJ4PSIxMCIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjayIgZm9udC1zaXplPSIyOCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5ERU1PIFNJRzwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjcwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Zb3VyIENvbXBhbnkgTmFtZTwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjkwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9InllbGxvdyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UG9pbnQgQ2FtZXJhIEhlcmU8L3RleHQ+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMTUiIGZpbGw9IiNmZmQ3MDAiLz4KICA8Y2lyY2xlIGN4PSIyNTAiIGN5PSI1MCIgcj0iMTUiIGZpbGw9IiNmZmQ3MDAiLz4KICA8Y2lyY2xlIGN4PSIxNTAiIGN5PSIxMjAiIHI9IjEwIiBmaWxsPSIjZmZkNzAwIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIxNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZDcwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U2NhbiBmb3IgU2FudGEhPC90ZXh0Pgo8L3N2Zz4K" 
+                 alt="Demo Sign">
+        </div>
+        
+        <p><strong>📱 Instructions:</strong></p>
+        <ol style="text-align: left; display: inline-block;">
+            <li>Print this sign OR display it on another screen</li>
+            <li>Click "Start AR Experience" below</li>
+            <li>Allow camera access when prompted</li>
+            <li>Point your phone camera at the sign</li>
+            <li>Watch Santa appear in 3D!</li>
+            <li>Take photos/videos to share</li>
+        </ol>
+        
+        <button class="button" onclick="startAR()">🚀 Start AR Experience</button>
+        
+        <p style="font-size: 12px; color: #cccccc; margin-top: 15px;">
+            <strong>Note:</strong> This requires HTTPS hosting to work. Perfect for GitHub Pages, Netlify, or your website!
+        </p>
+    </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+
+    <a-scene 
+        id="arScene"
+        vr-mode-ui="enabled: false;" 
+        renderer="logarithmicDepthBuffer: true;" 
+        embedded 
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+        style="display: none;">
+        
+        <!-- Assets -->
+        <a-assets>
+            <!-- You can add custom 3D Santa model here later -->
+        </a-assets>
+        
+        <!-- Demo sign marker using built-in hiro pattern -->
+        <a-marker 
+            id="demo-marker"
+            type="pattern" 
+            preset="hiro"
+            smooth="true"
+            raycaster="objects: .clickable"
+            emitevents="true">
+            
+            <!-- Enhanced Santa Figure -->
+            <a-group id="santa-group" position="0 0.1 0" scale="1.2 1.2 1.2">
+                <!-- Santa Body -->
+                <a-cylinder 
+                    position="0 0.4 0" 
+                    radius="0.25" 
+                    height="0.6" 
+                    color="#dc143c"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 12000">
+                </a-cylinder>
+                
+                <!-- Santa Head -->
+                <a-sphere 
+                    position="0 0.85 0" 
+                    radius="0.18" 
+                    color="#ffdbac">
+                </a-sphere>
+                
+                <!-- Santa Hat -->
+                <a-cone 
+                    position="0 1.1 0" 
+                    radius-bottom="0.15" 
+                    radius-top="0.02" 
+                    height="0.25" 
+                    color="#dc143c">
+                </a-cone>
+                
+                <!-- Hat Tip -->
+                <a-sphere 
+                    position="0.1 1.25 0" 
+                    radius="0.04" 
+                    color="white"
+                    animation="property: position; to: -0.1 1.25 0; dir: alternate; loop: true; dur: 3000">
+                </a-sphere>
+                
+                <!-- Santa Belt -->
+                <a-cylinder 
+                    position="0 0.25 0" 
+                    radius="0.27" 
+                    height="0.08" 
+                    color="#1a1a1a">
+                </a-cylinder>
+                
+                <!-- Belt Buckle -->
+                <a-box 
+                    position="0 0.25 0.25" 
+                    width="0.12" 
+                    height="0.06" 
+                    depth="0.02" 
+                    color="#ffd700">
+                </a-box>
+                
+                <!-- Santa Arms -->
+                <a-cylinder 
+                    position="0.3 0.6 0" 
+                    radius="0.06" 
+                    height="0.4" 
+                    color="#dc143c"
+                    rotation="0 0 45">
+                </a-cylinder>
+                <a-cylinder 
+                    position="-0.3 0.6 0" 
+                    radius="0.06" 
+                    height="0.4" 
+                    color="#dc143c"
+                    rotation="0 0 -45">
+                </a-cylinder>
+                
+                <!-- Santa Beard -->
+                <a-sphere 
+                    position="0 0.75 0.15" 
+                    radius="0.08" 
+                    color="white">
+                </a-sphere>
+                
+                <!-- Eyes -->
+                <a-sphere 
+                    position="0.05 0.9 0.15" 
+                    radius="0.02" 
+                    color="black">
+                </a-sphere>
+                <a-sphere 
+                    position="-0.05 0.9 0.15" 
+                    radius="0.02" 
+                    color="black">
+                </a-sphere>
+                
+                <!-- Floating "Ho Ho Ho" text -->
+                <a-text 
+                    position="0 1.6 0" 
+                    value="Ho Ho Ho!" 
+                    color="#ff0000" 
+                    align="center"
+                    scale="0.6 0.6 0.6"
+                    animation="property: position; to: 0 1.8 0; dir: alternate; loop: true; dur: 2000">
+                </a-text>
+                
+                <!-- Sparkle effects -->
+                <a-sphere 
+                    position="0.4 1.2 0.3" 
+                    radius="0.015" 
+                    color="#ffff00"
+                    animation="property: position; to: -0.4 1.4 -0.3; dir: alternate; loop: true; dur: 1800">
+                </a-sphere>
+                <a-sphere 
+                    position="-0.3 1.0 0.2" 
+                    radius="0.015" 
+                    color="#ffff00"
+                    animation="property: position; to: 0.3 1.3 -0.2; dir: alternate; loop: true; dur: 2200">
+                </a-sphere>
+                <a-sphere 
+                    position="0.2 0.8 0.4" 
+                    radius="0.015" 
+                    color="#ffffff"
+                    animation="property: position; to: -0.2 1.1 -0.4; dir: alternate; loop: true; dur: 1600">
+                </a-sphere>
+                
+                <!-- Gift Box -->
+                <a-box 
+                    position="0.5 0.1 0" 
+                    width="0.15" 
+                    height="0.15" 
+                    depth="0.15" 
+                    color="#228b22"
+                    animation="property: rotation; to: 360 360 0; loop: true; dur: 8000">
+                </a-box>
+                
+                <!-- Gift Ribbon -->
+                <a-box 
+                    position="0.5 0.1 0" 
+                    width="0.16" 
+                    height="0.03" 
+                    depth="0.16" 
+                    color="#ffd700">
+                </a-box>
+            </a-group>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        let arStarted = false;
+        
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            // Auto-hide after 3 seconds unless it's an error
+            if (type !== 'error') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function startAR() {
+            if (arStarted) return;
+            
+            // Hide instructions
+            document.getElementById('instructions').classList.add('hidden');
+            
+            // Show AR scene
+            document.getElementById('arScene').style.display = 'block';
+            arStarted = true;
+            
+            showStatus('📷 Starting camera... Please allow access!');
+            
+            // Listen for marker events
+            const marker = document.querySelector('#demo-marker');
+            
+            marker.addEventListener('markerFound', function() {
+                console.log('Santa sign detected!');
+                showStatus('🎅 Santa detected! Take a photo!', 'success');
+            });
+            
+            marker.addEventListener('markerLost', function() {
+                console.log('Santa sign lost');
+                showStatus('📄 Point camera at the sign to see Santa');
+            });
+        }
+        
+        // Handle camera permissions and errors
+        window.addEventListener('load', function() {
+            // Check HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                showStatus('⚠️ HTTPS required for camera access. Upload to GitHub Pages or Netlify!', 'error');
+            }
+        });
+    </script>
 </body>
 </html>
