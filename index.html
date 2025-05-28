@@ -3,328 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa AR - Debug Version</title>
+    <title>Santa AR Experience</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/aframe/build/aframe-ar.min.js"></script>
     <style>
         body {
             margin: 0;
-            padding: 20px;
             font-family: Arial, sans-serif;
-            background: #f0f0f0;
         }
         
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            color: white;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .step {
-            margin: 15px 0;
-            padding: 15px;
             border-radius: 10px;
-            border: 2px solid #ddd;
+            text-align: center;
+            z-index: 100;
         }
         
-        .step.active {
-            border-color: #007bff;
-            background: #f0f8ff;
+        .instructions.hide {
+            display: none;
         }
         
-        .step.success {
-            border-color: #28a745;
-            background: #f0fff0;
+        .demo-sign {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
         }
         
-        .step.error {
-            border-color: #dc3545;
-            background: #fff0f0;
+        .demo-sign img {
+            max-width: 250px;
+            border: 3px solid #333;
         }
         
-        .button {
-            background: #007bff;
+        .btn {
+            background: #ff4444;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
+            padding: 15px 25px;
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            width: 100%;
-            margin: 10px 0;
+            margin: 10px;
         }
         
-        .button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-        
-        .button.success {
-            background: #28a745;
-        }
-        
-        .button.error {
-            background: #dc3545;
-        }
-        
-        #videoContainer {
-            width: 100%;
-            height: 200px;
-            background: #000;
-            border-radius: 10px;
-            margin: 10px 0;
+        .status {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 99;
             display: none;
-            overflow: hidden;
-        }
-        
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .info {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            margin: 10px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🔍 Santa AR - Debug Mode</h2>
-        <p>Let's test each step to find the issue!</p>
+    <div id="instructions" class="instructions">
+        <h2>🎅 Santa AR Experience</h2>
+        <p>Point your camera at the sign below to see Santa appear!</p>
         
-        <!-- Step 1: HTTPS Check -->
-        <div class="step" id="step1">
-            <h4>Step 1: HTTPS Check</h4>
-            <p id="httpsStatus">Checking...</p>
+        <div class="demo-sign">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNDQ4OCIgcng9IjEwIi8+CiAgPHRleHQgeD0iMTAwIiB5PSIzNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkRFTU8gU0lHTjwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjU1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Zb3VyIENvbXBhbnkgTmFtZTwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjczIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9InllbGxvdyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UG9pbnQgQ2FtZXJhIEhlcmU8L3RleHQ+CiAgPGNpcmNsZSBjeD0iNDAiIGN5PSI3NSIgcj0iOCIgZmlsbD0iI2ZmZDcwMCIvPgogIDxjaXJjbGUgY3g9IjE2MCIgY3k9Ijc1IiByPSI4IiBmaWxsPSIjZmZkNzAwIi8+Cjwvc3ZnPgo=" alt="Demo Sign">
         </div>
         
-        <!-- Step 2: Browser Check -->
-        <div class="step" id="step2">
-            <h4>Step 2: Browser Compatibility</h4>
-            <p id="browserStatus">Checking...</p>
-        </div>
+        <p><strong>Steps:</strong></p>
+        <p>1. Print this sign OR show it on another screen</p>
+        <p>2. Click Start AR below</p>
+        <p>3. Allow camera access</p>
+        <p>4. Point camera at the sign</p>
         
-        <!-- Step 3: Camera Permissions -->
-        <div class="step" id="step3">
-            <h4>Step 3: Camera Permission Test</h4>
-            <button class="button" id="cameraButton" onclick="testCamera()">
-                📷 Test Camera Access
-            </button>
-            <div id="videoContainer">
-                <video id="video" autoplay playsinline></video>
-            </div>
-            <p id="cameraStatus">Click button to test</p>
-        </div>
-        
-        <!-- Step 4: WebAR Libraries -->
-        <div class="step" id="step4">
-            <h4>Step 4: WebAR Library Test</h4>
-            <button class="button" id="arButton" onclick="testAR()" disabled>
-                🎅 Test AR (after camera works)
-            </button>
-            <p id="arStatus">Complete camera test first</p>
-        </div>
-        
-        <div class="info">
-            <strong>📱 Device Info:</strong><br>
-            <span id="deviceInfo">Loading...</span>
-        </div>
-        
-        <div class="info" id="debugLog" style="display: none;">
-            <strong>🔍 Debug Log:</strong><br>
-            <div id="logContent"></div>
-        </div>
+        <button class="btn" onclick="startAR()">🚀 Start AR Experience</button>
     </div>
+    
+    <div id="status" class="status"></div>
+    
+    <a-scene 
+        id="arScene"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true"
+        embedded
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false"
+        style="display: none;">
+        
+        <a-marker 
+            type="pattern" 
+            preset="hiro"
+            id="markerA">
+            
+            <a-group position="0 0.5 0">
+                <a-cylinder 
+                    position="0 0 0" 
+                    radius="0.3" 
+                    height="0.6" 
+                    color="#dc143c">
+                </a-cylinder>
+                
+                <a-sphere 
+                    position="0 0.5 0" 
+                    radius="0.15" 
+                    color="#ffdbac">
+                </a-sphere>
+                
+                <a-cone 
+                    position="0 0.7 0" 
+                    radius-bottom="0.12" 
+                    radius-top="0.05" 
+                    height="0.2" 
+                    color="#dc143c">
+                </a-cone>
+                
+                <a-text 
+                    position="0 1.2 0" 
+                    value="Ho Ho Ho!" 
+                    color="red" 
+                    align="center"
+                    scale="0.5 0.5 0.5">
+                </a-text>
+            </a-group>
+        </a-marker>
+        
+        <a-entity camera></a-entity>
+    </a-scene>
 
     <script>
-        let debugLog = [];
-        let stream = null;
-        
-        function log(message) {
-            console.log(message);
-            debugLog.push(new Date().toLocaleTimeString() + ": " + message);
-            document.getElementById('logContent').innerHTML = debugLog.join('<br>');
-            document.getElementById('debugLog').style.display = 'block';
-        }
-        
-        function updateStep(stepId, status, message) {
-            const step = document.getElementById(stepId);
-            step.className = `step ${status}`;
+        function startAR() {
+            document.getElementById('instructions').classList.add('hide');
+            document.getElementById('arScene').style.display = 'block';
+            showMessage('📷 Starting camera... Allow access when prompted!');
             
-            const statusElement = document.getElementById(stepId.replace('step', '') + 'Status') || 
-                                 step.querySelector('p');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
-        
-        // Step 1: Check HTTPS
-        function checkHTTPS() {
-            const isHTTPS = location.protocol === 'https:';
-            const isLocalhost = location.hostname === 'localhost';
-            
-            if (isHTTPS || isLocalhost) {
-                updateStep('step1', 'success', '✅ HTTPS detected - camera access possible');
-                log('HTTPS check passed');
-                return true;
-            } else {
-                updateStep('step1', 'error', '❌ HTTPS required for camera access');
-                log('HTTPS check failed - using ' + location.protocol);
-                return false;
-            }
-        }
-        
-        // Step 2: Check Browser
-        function checkBrowser() {
-            const userAgent = navigator.userAgent;
-            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-            const isAndroid = /Android/.test(userAgent);
-            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-            const isChrome = /Chrome/.test(userAgent);
-            
-            let browserStatus = '';
-            let isGoodBrowser = false;
-            
-            if (isIOS) {
-                if (isSafari) {
-                    browserStatus = '✅ iOS Safari - Perfect for WebAR';
-                    isGoodBrowser = true;
-                } else {
-                    browserStatus = '⚠️ iOS detected but not Safari. Try Safari instead.';
-                }
-            } else if (isAndroid) {
-                if (isChrome) {
-                    browserStatus = '✅ Android Chrome - Perfect for WebAR';
-                    isGoodBrowser = true;
-                } else {
-                    browserStatus = '⚠️ Android detected but not Chrome. Try Chrome instead.';
-                }
-            } else {
-                browserStatus = '⚠️ Desktop browser detected. Use mobile device for AR.';
-            }
-            
-            updateStep('step2', isGoodBrowser ? 'success' : 'error', browserStatus);
-            log('Browser check: ' + browserStatus);
-            return isGoodBrowser;
-        }
-        
-        // Step 3: Test Camera
-        async function testCamera() {
-            const button = document.getElementById('cameraButton');
-            const video = document.getElementById('video');
-            const container = document.getElementById('videoContainer');
-            
-            button.disabled = true;
-            button.textContent = '📷 Testing Camera...';
-            updateStep('step3', 'active', 'Requesting camera access...');
-            log('Starting camera test');
-            
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                };
-                
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                
-                video.onloadedmetadata = function() {
-                    container.style.display = 'block';
-                    updateStep('step3', 'success', '✅ Camera working! You should see video above.');
-                    button.textContent = '🛑 Stop Camera';
-                    button.onclick = stopCamera;
-                    button.disabled = false;
-                    button.className = 'button success';
-                    
-                    // Enable AR test
-                    document.getElementById('arButton').disabled = false;
-                    updateStep('step4', 'active', 'Ready to test AR!');
-                    
-                    log('Camera started successfully');
-                };
-                
-            } catch (error) {
-                let errorMsg = '❌ Camera failed: ';
-                
-                if (error.name === 'NotAllowedError') {
-                    errorMsg += 'Permission denied. Check browser settings.';
-                } else if (error.name === 'NotFoundError') {
-                    errorMsg += 'No camera found.';
-                } else if (error.name === 'NotSupportedError') {
-                    errorMsg += 'Camera not supported in this browser.';
-                } else {
-                    errorMsg += error.message;
-                }
-                
-                updateStep('step3', 'error', errorMsg);
-                button.textContent = '📷 Try Again';
-                button.disabled = false;
-                button.className = 'button error';
-                
-                log('Camera error: ' + error.name + ' - ' + error.message);
-            }
-        }
-        
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            
-            document.getElementById('videoContainer').style.display = 'none';
-            document.getElementById('cameraButton').textContent = '📷 Test Camera Access';
-            document.getElementById('cameraButton').onclick = testCamera;
-            document.getElementById('cameraButton').className = 'button';
-            updateStep('step3', '', 'Click button to test camera');
-            log('Camera stopped');
-        }
-        
-        function testAR() {
-            updateStep('step4', 'active', 'Loading AR libraries...');
-            log('Testing AR libraries');
-            
-            // Test if A-Frame and AR.js are available
-            setTimeout(() => {
-                if (typeof AFRAME !== 'undefined') {
-                    updateStep('step4', 'success', '✅ AR libraries loaded! Your setup is ready.');
-                    log('AR libraries test passed');
-                    
-                    // Show link to full AR experience
-                    const step4 = document.getElementById('step4');
-                    step4.innerHTML += `
-                        <div style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 5px;">
-                            <h4>🎉 Ready for Full AR!</h4>
-                            <p>Your setup works! Go back to your main Santa AR page and try again.</p>
-                            <p><strong>Tip:</strong> Make sure to print or display the demo sign on another screen.</p>
-                        </div>
-                    `;
-                } else {
-                    updateStep('step4', 'error', '❌ AR libraries failed to load');
-                    log('AR libraries test failed');
+            setTimeout(function() {
+                var marker = document.querySelector('#markerA');
+                if (marker) {
+                    marker.addEventListener('markerFound', function() {
+                        showMessage('🎅 Santa found! Take a photo!');
+                    });
+                    marker.addEventListener('markerLost', function() {
+                        showMessage('📄 Point camera at the sign');
+                    });
                 }
             }, 2000);
         }
         
-        // Initialize on page load
-        window.addEventListener('load', function() {
-            // Device info
-            document.getElementById('deviceInfo').textContent = navigator.userAgent.substring(0, 100) + '...';
+        function showMessage(text) {
+            var status = document.getElementById('status');
+            status.textContent = text;
+            status.style.display = 'block';
             
-            // Run checks
-            checkHTTPS();
-            checkBrowser();
-            
-            log('Debug page loaded');
-        });
+            setTimeout(function() {
+                status.style.display = 'none';
+            }, 4000);
+        }
     </script>
 </body>
 </html>
